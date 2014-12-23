@@ -7,6 +7,10 @@ mp4encoder
 	2. convert video to mp4 standard
 	3. deliver file to config ftp server
 
+
+* mp4encoder will examine input video file, then decide to convert it into correct resolution. if video should be converted to 360p, it will be converted to 360p. 
+* mp4encoder is optimized to work with ``eStreaming server``, our streaming server that automatically split video into small http live streaming ts file and playlist, with adaptive bitrate support.
+
 Usage
 =====
 
