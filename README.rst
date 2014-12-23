@@ -12,8 +12,8 @@ Usage
 
 config.ini
 -----------------
-
 ::
+
 	[file]
 	source = /data/upload
 	destination = /data/converted
