@@ -197,7 +197,7 @@ void* gm_worker(void *args) {
         fprintf(stderr, "%s\n", gearman_worker_error(&worker));
         exit(1);
     }
-    printf("jobname: %s\n", config->job_name);
+//    printf("jobname: %s\n", config->job_name);
     ret = gearman_worker_add_function(&worker, config->job_name, 0, convert_worker, NULL);
     if (ret != GEARMAN_SUCCESS) {
         fprintf(stderr, "%s\n", gearman_worker_error(&worker));
