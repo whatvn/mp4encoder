@@ -439,7 +439,7 @@ int convert(const char *input, const char* output) {
     int (*dec_func)(AVCodecContext *, AVFrame *, int *, const AVPacket *);
     int width = 640;
     int height = 360;
-    av_log_set_level(AV_LOG_ERROR);
+    av_log_set_level(AV_LOG_DEBUG);
     av_register_all();
     avfilter_register_all();
     

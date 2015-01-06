@@ -197,6 +197,7 @@ void* gm_worker(void *args) {
         fprintf(stderr, "%s\n", gearman_worker_error(&worker));
         exit(1);
     }
+    printf("jobname: %s\n", config->job_name);
     ret = gearman_worker_add_function(&worker, config->job_name, 0, convert_worker, NULL);
     if (ret != GEARMAN_SUCCESS) {
         fprintf(stderr, "%s\n", gearman_worker_error(&worker));
@@ -227,46 +228,55 @@ int deliver(const char *src_file, netbuf *conn) {
 }
 
 int main(int argc, char* argv[]) {
-    configuration config;
+    configuration *config = malloc(sizeof (configuration));
+//    config = malloc(sizeof (configuration));
     av_register_all();
     int ret;
     int i;
-    if (ini_parse("config.ini", handler, &config) < 0) {
+    if (ini_parse("config.ini", handler, config) < 0) {
         printf("Can't load 'config.ini'\n");
         return 1;
     }
 
-    if (config.ftp_server != NULL) {
-        if (config.ftp_username == NULL || config.ftp_password == NULL) {
+    if (config->ftp_server != NULL) {
+        if (config->ftp_username == NULL || config->ftp_password == NULL) {
             fprintf(stderr, "FTP configuration error, application will be exited\n");
             exit(2);
         } else {
             use_ftp = 1;
         }
+    } else {
+        config->ftp_server = "";
+        config->ftp_username= "";
+        config->ftp_password = "";
     }
     printf("Config loaded from 'config.ini': source=%s, dest=%s, host=%s, "
             "port=%d, jobname=%s,  workers=%d, ftp server = %s, ftp user = %s\n",
-            config.source, config.dest, config.gearman_host, config.gearman_port,
-            config.job_name, config.workers, config.ftp_server, config.ftp_username);
+            config->source, config->dest, config->gearman_host, config->gearman_port,
+            config->job_name, config->workers, config->ftp_server, config->ftp_username);
 
     // init ftp connection
-    if (use_ftp) {
+    if (use_ftp == 1) {
         FtpInit();
-        ret = FtpConnect(config.ftp_server, &conn);
-        if (ret < 0) {
+        ret = FtpConnect(config->ftp_server, &conn);
+        printf("Connecting...\n");
+        if (ret == 0) {
             printf("cannot connect to ftp server, return code: %d\n", ret);
+            exit(EXIT_FAILURE);
         }
-        ret = FtpLogin(config.ftp_username, config.ftp_password, conn);
-        if (ret < 0) {
+        ret = FtpLogin(config->ftp_username, config->ftp_password, conn);
+        printf("Login...\n");
+        if (ret == 0) {
             printf("cannot login into ftp server, return code: %d\n", ret);
+            exit(EXIT_FAILURE);
         }
     }
-    pthread_t *thread_id = malloc(config.workers * sizeof (pthread_t));
-    for (i = 0; i < config.workers; i++) {
+    pthread_t *thread_id = malloc(config->workers * sizeof (pthread_t));
+    for (i = 0; i < config->workers; i++) {
         printf("Start worker id #%d \n", i);
-        pthread_create(&thread_id[i], NULL, gm_worker, &config);
+        pthread_create(&thread_id[i], NULL, gm_worker, config);
     }
-    for (i = 0; i < config.workers; i++) {
+    for (i = 0; i < config->workers; i++) {
         pthread_join(thread_id[i], NULL);
     }
     pthread_exit(NULL);
@@ -288,6 +298,8 @@ static void *convert_worker(gearman_job_st *job, void *cb_arg, size_t *result_si
     element = split((char*) &workload_data, ':', &arr);
     if (element != 2) {
         printf("Invalid input format\n");
+        *ret_ptr = GEARMAN_FAIL;
+        return NULL;
     }
     char* src = arr[0];
     char* dst = arr[1];
@@ -302,7 +314,7 @@ static void *convert_worker(gearman_job_st *job, void *cb_arg, size_t *result_si
         printf("%s : Convert fail\n", workload_data);
         return NULL;
     }
-    if (use_ftp) {
+    if (use_ftp == 1) {
         res = deliver(dst, conn);
         if (res < 0) {
             printf("cannot deliver file: %s to ftp server\n", dst);
