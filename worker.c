@@ -280,9 +280,10 @@ static void *convert_worker(gearman_job_st *job, void *cb_arg, size_t *result_si
     char **arr = NULL;
     uint8_t *result;
     (void) cb_arg;
-    char workload_data[100] = "";
+   
     workload = gearman_job_workload(job);
     *result_size = gearman_job_workload_size(job);
+     char workload_data[200] = "";
     strncpy(workload_data, workload, *result_size);
     printf("Job information: %s\n", workload_data);
     element = split((char*) &workload_data, ':', &arr);
