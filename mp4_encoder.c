@@ -11,7 +11,7 @@ static int open_input_file(const char *filename, AVFormatContext *ifmt_ctx) {
     int ret;
     unsigned int i;
     int res;
-//    ifmt_ctx = NULL;
+    //    ifmt_ctx = NULL;
     AVInputFormat* input_format = NULL;
 //    av_find_input_format()
 //    input_format = av_find_input_format(filename);
@@ -291,8 +291,8 @@ end:
     return ret;
 }
 
-static int init_filters(int width, int height, AVFormatContext *ifmt_ctx, 
-         AVFormatContext *ofmt_ctx, FilteringContext *filter_ctx) {
+static int init_filters(int width, int height, AVFormatContext *ifmt_ctx,
+        AVFormatContext *ofmt_ctx, FilteringContext *filter_ctx) {
     unsigned int i;
     char filter_spec[512];
     int ret;
@@ -364,7 +364,7 @@ static int encode_write_frame(AVFrame *filt_frame, unsigned int stream_index, in
     return ret;
 }
 
-static int filter_encode_write_frame(AVFrame *frame, unsigned int stream_index, 
+static int filter_encode_write_frame(AVFrame *frame, unsigned int stream_index,
         FilteringContext *filter_ctx, AVFormatContext *ofmt_ctx, AVFormatContext *ifmt_ctx) {
     int ret;
     AVFrame *filt_frame;
@@ -408,7 +408,7 @@ static int filter_encode_write_frame(AVFrame *frame, unsigned int stream_index,
     return ret;
 }
 
-static int flush_encoder(unsigned int stream_index, AVFormatContext *ofmt_ctx, 
+static int flush_encoder(unsigned int stream_index, AVFormatContext *ofmt_ctx,
         AVFormatContext *ifmt_ctx) {
     int ret;
     int got_frame;
@@ -439,10 +439,10 @@ int convert(const char *input, const char* output) {
     int (*dec_func)(AVCodecContext *, AVFrame *, int *, const AVPacket *);
     int width = 640;
     int height = 360;
-    av_log_set_level(AV_LOG_ERROR);
+    av_log_set_level(AV_LOG_DEBUG);
     av_register_all();
     avfilter_register_all();
-    
+
     AVFormatContext *ifmt_ctx;
     ifmt_ctx = avformat_alloc_context();
     AVFormatContext *ofmt_ctx;
@@ -455,13 +455,16 @@ int convert(const char *input, const char* output) {
     }
     ofmt_ctx = NULL;
     avformat_alloc_output_context2(&ofmt_ctx, output_format, NULL, output);
-    
-    
+
+
     FilteringContext *filter_ctx;
     filter_ctx = av_malloc_array(ifmt_ctx->nb_streams, sizeof (*filter_ctx));
 
-    if ((ret = open_input_file(input, ifmt_ctx)) < 0)
-        goto end;
+    if ((ret = open_input_file(input, ifmt_ctx)) < 0) {
+        avformat_free_context(ifmt_ctx);
+        avformat_free_context(filter_ctx);
+        return ret;
+    }
     if (ret == 1) {
         width = 1080;
         height = 720;
@@ -469,10 +472,19 @@ int convert(const char *input, const char* output) {
         width = 854;
         height = 480;
     }
-    if ((ret = open_output_file(output, width, height, ofmt_ctx, ifmt_ctx) < 0))
-        goto end;
-    if ((ret = init_filters(width, height, ifmt_ctx, ofmt_ctx, filter_ctx)) < 0)
-        goto end;
+    if ((ret = open_output_file(output, width, height, ofmt_ctx, ifmt_ctx) < 0)) {
+        avformat_free_context(ifmt_ctx);
+        avformat_free_context(ofmt_ctx);
+        avformat_free_context(filter_ctx);
+        return ret;
+    }
+    if ((ret = init_filters(width, height, ifmt_ctx, ofmt_ctx, filter_ctx)) < 0) {
+        avformat_free_context(ifmt_ctx);
+        avformat_free_context(ofmt_ctx);
+        avformat_free_context(filter_ctx);
+        return ret;
+    }
+
     printf("File will be converted to size w: %d, h: %d \n", width, height);
     int vc = 0;
     /* read all packets */
@@ -564,7 +576,7 @@ end:
     if (ifmt_ctx != NULL) avformat_close_input(&ifmt_ctx);
     if (ofmt_ctx && !(ofmt_ctx->oformat->flags & AVFMT_NOFILE))
         avio_close(ofmt_ctx->pb);
-    if(ofmt_ctx != NULL) avformat_free_context(ofmt_ctx);
+    if (ofmt_ctx != NULL) avformat_free_context(ofmt_ctx);
 
     if (ret < 0)
         av_log(NULL, AV_LOG_ERROR, "Error occurred: %s\n", av_err2str(ret));
