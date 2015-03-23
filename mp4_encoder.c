@@ -13,8 +13,9 @@ static int open_input_file(const char *filename, AVFormatContext *ifmt_ctx) {
     int res;
 //    ifmt_ctx = NULL;
     AVInputFormat* input_format = NULL;
-    input_format = av_find_input_format(filename);
-    if (input_format != NULL) printf("format file input: %s\n", input_format->name);
+//    av_find_input_format()
+//    input_format = av_find_input_format(filename);
+//    if (input_format != NULL) printf("format file input: %s\n", input_format->name);
     if ((ret = avformat_open_input(&ifmt_ctx, filename, input_format, NULL)) < 0) {
         av_log(NULL, AV_LOG_ERROR, "Cannot open input file\n");
         return ret;
@@ -109,7 +110,6 @@ static int open_output_file(const char *filename, int width, int height,
                 enc_ctx->sample_rate = dec_ctx->sample_rate;
                 out_stream->r_frame_rate = in_stream->r_frame_rate;
                 enc_ctx->sample_aspect_ratio = dec_ctx->sample_aspect_ratio;
-                enc_ctx->framerate = dec_ctx->framerate;
                 enc_ctx->pix_fmt = dec_ctx->pix_fmt;
                 enc_ctx->has_b_frames = dec_ctx->has_b_frames;
                 enc_ctx->qmin = 30;
@@ -448,6 +448,7 @@ int convert(const char *input, const char* output) {
     AVFormatContext *ofmt_ctx;
     AVOutputFormat* output_format;
     output_format = av_guess_format(NULL, output, NULL);
+    printf("Output filename: %s\n", output);
 
     if (output_format != NULL) {
         printf("Output format: %s\n", output_format->name);
