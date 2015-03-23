@@ -462,7 +462,9 @@ int convert(const char *input, const char* output) {
 
     if ((ret = open_input_file(input, ifmt_ctx)) < 0) {
         avformat_free_context(ifmt_ctx);
-        avformat_free_context(filter_ctx);
+        av_freep(filter_ctx);
+//        avfilter_free(filter_ctx);
+//        avformat_free_context(filter_ctx);
         return ret;
     }
     if (ret == 1) {
@@ -475,13 +477,13 @@ int convert(const char *input, const char* output) {
     if ((ret = open_output_file(output, width, height, ofmt_ctx, ifmt_ctx) < 0)) {
         avformat_free_context(ifmt_ctx);
         avformat_free_context(ofmt_ctx);
-        avformat_free_context(filter_ctx);
+        av_freep(filter_ctx);
         return ret;
     }
     if ((ret = init_filters(width, height, ifmt_ctx, ofmt_ctx, filter_ctx)) < 0) {
         avformat_free_context(ifmt_ctx);
         avformat_free_context(ofmt_ctx);
-        avformat_free_context(filter_ctx);
+        av_freep(filter_ctx);
         return ret;
     }
 
