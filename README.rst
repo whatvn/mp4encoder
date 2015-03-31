@@ -1,5 +1,6 @@
 mp4encoder
 ============
+* THIS IS `WORK-IN-PROGRESS` project, please careful consider before using it.
 * Video encoding and delivery which makes use of ffmpeg api (libav*), gearman and ftplib  
 
 * Step
