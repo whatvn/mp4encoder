@@ -115,7 +115,7 @@ char *replace_str(char *str, char *old, char *new) {
     return ret;
 }
 
-static void ftp_mkdir(const char *dir, netbuf *conn) {
+static int ftp_mkdir(const char *dir, netbuf *conn) {
     char tmp[256];
     char *p = NULL;
     size_t len;
@@ -130,7 +130,7 @@ static void ftp_mkdir(const char *dir, netbuf *conn) {
             FtpMkdir(tmp, conn);
             *p = '/';
         }
-    FtpMkdir(tmp, conn);
+    return FtpMkdir(tmp, conn);
 }
 
 static void local_mkdir(const char *dir) {
@@ -220,7 +220,8 @@ int deliver(const char *src_file, netbuf *conn) {
     char **arr = NULL;
     int len = split((char *) src_file, '/', &arr);
     char* directory = replace_str((char *) src_file, arr[len - 1], "");
-    ftp_mkdir(directory, conn);
+    ret = ftp_mkdir(directory, conn);
+    if (!ret) return -1;
     printf("mkdir: %s\n", FtpLastResponse(conn));
     ret = FtpPut(src_file, src_file, 'I', conn);
     printf("put: %s\n", FtpLastResponse(conn));
